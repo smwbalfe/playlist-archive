@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/db"
 	"context"
+
 	"github.com/gofrs/uuid/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/smwbalfe/playlist-archive/backend/internal/db"
 )
 
 type PostgresUserRepository struct {

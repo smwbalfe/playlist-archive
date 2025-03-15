@@ -1,7 +1,7 @@
 package models
 
 import (
-	sharedModels "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/shared"
+	sharedModels "github.com/smwbalfe/playlist-archive/backend/pkg/client/shared"
 )
 
 type DiscoveredResponse struct {

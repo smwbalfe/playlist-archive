@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/db"
 	"context"
+
+	"github.com/smwbalfe/playlist-archive/backend/internal/db"
 )
 
 type PostgresArtistRepository struct {

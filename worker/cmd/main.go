@@ -3,22 +3,23 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
 	"os"
 	"os/signal"
 	"scraper/internal/config"
-	"scraper/internal/services"
+	service "scraper/internal/services"
 	"scraper/internal/workers"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
+	"github.com/smwbalfe/playlist-archive/backend/pkg/client"
 )
 
 func InitializeServices(dbs *config.DatabaseConnections) (*config.AppServices, error) {
 	spClient, err := client.NewSpotifyClient()
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize spotify client: %w", err)
 	}

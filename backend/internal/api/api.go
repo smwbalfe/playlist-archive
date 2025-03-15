@@ -2,13 +2,14 @@ package api
 
 import (
 	// "backend/internal/api/middleware"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/api/middleware"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/config"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/repository"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/services"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/workers"
 	"context"
 	"net/http"
+
+	"github.com/smwbalfe/playlist-archive/backend/internal/api/middleware"
+	"github.com/smwbalfe/playlist-archive/backend/internal/config"
+	"github.com/smwbalfe/playlist-archive/backend/internal/repository"
+	service "github.com/smwbalfe/playlist-archive/backend/internal/services"
+	"github.com/smwbalfe/playlist-archive/backend/internal/workers"
 
 	"github.com/go-chi/chi/v5"
 
@@ -16,7 +17,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/gorilla/websocket"
 	"github.com/rs/zerolog/log"
-	client "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
+	client "github.com/smwbalfe/playlist-archive/backend/pkg/client"
 )
 
 var upgrader = websocket.Upgrader{

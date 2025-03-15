@@ -1,16 +1,17 @@
 package service
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/domain"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/utils"
 	"context"
 	"fmt"
 	"sync"
 
+	"github.com/smwbalfe/playlist-archive/backend/internal/domain"
+	"github.com/smwbalfe/playlist-archive/backend/internal/utils"
+
 	"github.com/rs/zerolog/log"
-	client "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
-	artModels "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/artist/models"
-	plModels "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/playlist/models"
+	client "github.com/smwbalfe/playlist-archive/backend/pkg/client"
+	artModels "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/artist/models"
+	plModels "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/playlist/models"
 )
 
 type SpotifyService struct {
@@ -140,7 +141,7 @@ func (srv *SpotifyService) GetBatchPlaylistTracks(playlistIDs []string) []plMode
 	return playlistTracks
 }
 
-func (srv *SpotifyService) GetTrackArtistsIds(track plModels.Track) []string{
+func (srv *SpotifyService) GetTrackArtistsIds(track plModels.Track) []string {
 	var artists []string
 	for _, artist := range track.Artists.Items {
 		artists = append(artists, utils.ExtractSpotifyIDColon(artist.URI))
@@ -149,42 +150,42 @@ func (srv *SpotifyService) GetTrackArtistsIds(track plModels.Track) []string{
 }
 
 func containsGenre(genres []string, genre string) bool {
-    for _, g := range genres {
-        if g == genre {
-            return true
-        }
-    }
-    return false
+	for _, g := range genres {
+		if g == genre {
+			return true
+		}
+	}
+	return false
 }
 
 func (srv *SpotifyService) AppendGenreToTracks(tracks []plModels.Track) []plModels.Track {
-    if len(tracks) == 0 {
-        return tracks
-    }
-    allArtistIds := make([]string, 0)
-    artistIdMap := make(map[string][]int)
-    for i, track := range tracks {
-        artistIds := srv.GetTrackArtistsIds(track)
-        for _, artistId := range artistIds {
-            artistIdMap[artistId] = append(artistIdMap[artistId], i)
-            allArtistIds = append(allArtistIds, artistId)
-        }
-    }
-    artistsExpanded, err := srv.BatchGetArtists(allArtistIds)
-    if err != nil {
-        log.Err(err)
-        return tracks
-    }
-    for _, artist := range artistsExpanded.Artists {
-        for _, trackIndex := range artistIdMap[artist.ID] {
-            for _, genre := range artist.Genres {
-                if !containsGenre(tracks[trackIndex].Genres, genre) {
-                    tracks[trackIndex].Genres = append(tracks[trackIndex].Genres, genre)
-                }
-            }
-        }
-    }
-    return tracks
+	if len(tracks) == 0 {
+		return tracks
+	}
+	allArtistIds := make([]string, 0)
+	artistIdMap := make(map[string][]int)
+	for i, track := range tracks {
+		artistIds := srv.GetTrackArtistsIds(track)
+		for _, artistId := range artistIds {
+			artistIdMap[artistId] = append(artistIdMap[artistId], i)
+			allArtistIds = append(allArtistIds, artistId)
+		}
+	}
+	artistsExpanded, err := srv.BatchGetArtists(allArtistIds)
+	if err != nil {
+		log.Err(err)
+		return tracks
+	}
+	for _, artist := range artistsExpanded.Artists {
+		for _, trackIndex := range artistIdMap[artist.ID] {
+			for _, genre := range artist.Genres {
+				if !containsGenre(tracks[trackIndex].Genres, genre) {
+					tracks[trackIndex].Genres = append(tracks[trackIndex].Genres, genre)
+				}
+			}
+		}
+	}
+	return tracks
 }
 
 func (srv *SpotifyService) FilterPlaylistByGenres(playlistIDs []string, targetGenres []string) ([]plModels.Track, error) {

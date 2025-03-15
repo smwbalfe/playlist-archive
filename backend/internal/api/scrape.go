@@ -1,14 +1,15 @@
 package api
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/services"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/transport"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/utils"
 	"fmt"
+	"net/http"
+
 	"github.com/gofrs/uuid/v5"
 	"github.com/jackc/pgx/v5/pgtype"
-	models "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/playlist/models"
-	"net/http"
+	service "github.com/smwbalfe/playlist-archive/backend/internal/services"
+	"github.com/smwbalfe/playlist-archive/backend/internal/transport"
+	"github.com/smwbalfe/playlist-archive/backend/internal/utils"
+	models "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/playlist/models"
 )
 
 func (a *api) ArtistScrape(w http.ResponseWriter, r *http.Request) {
@@ -77,7 +78,7 @@ func collectUniqueArtists(tracks []models.Track, limit int) []string {
 func (a *api) PlaylistSeededScrape(w http.ResponseWriter, r *http.Request) {
 	playlistID := r.URL.Query()["id"]
 
-	fmt.Printf("playlist lists :%v" , playlistID)
+	fmt.Printf("playlist lists :%v", playlistID)
 
 	userID, ok := r.Context().Value("user").(uuid.UUID)
 
@@ -87,24 +88,24 @@ func (a *api) PlaylistSeededScrape(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var artists []string
-    for _, playlistID := range playlistID {
-        parsedID, err := utils.ParseSpotifyId(playlistID)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        tracks, err := a.spotifyService.GetTracksExpanded(parsedID)
-        if err != nil {
-            http.Error(w, err.Error(), http.StatusInternalServerError)
-            return
-        }
-        if len(tracks) == 0 {
-            http.Error(w, "no tracks", http.StatusInternalServerError)
-            return
-        }
-        playlistArtists := collectUniqueArtists(tracks, 5)
-        artists = append(artists, playlistArtists...)
-    }
+	for _, playlistID := range playlistID {
+		parsedID, err := utils.ParseSpotifyId(playlistID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		tracks, err := a.spotifyService.GetTracksExpanded(parsedID)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if len(tracks) == 0 {
+			http.Error(w, "no tracks", http.StatusInternalServerError)
+			return
+		}
+		playlistArtists := collectUniqueArtists(tracks, 5)
+		artists = append(artists, playlistArtists...)
+	}
 
 	for _, artist := range artists {
 

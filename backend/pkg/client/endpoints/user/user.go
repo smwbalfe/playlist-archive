@@ -3,8 +3,9 @@ package user
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/user/models"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/interface"
+
+	"github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/user/models"
+	interfaces "github.com/smwbalfe/playlist-archive/backend/pkg/client/interface"
 )
 
 const (

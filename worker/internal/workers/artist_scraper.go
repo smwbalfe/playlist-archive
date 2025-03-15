@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"scraper/internal/config"
-	"scraper/internal/services"
-	client "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
+	service "scraper/internal/services"
+
+	client "github.com/smwbalfe/playlist-archive/backend/pkg/client"
 )
 
 type ArtistScrapeWorker struct {

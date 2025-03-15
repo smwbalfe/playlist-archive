@@ -3,10 +3,11 @@ package artist
 import (
 	"encoding/json"
 	"fmt"
-	models "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/artist/models"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/interface"
 	"net/url"
 	"strings"
+
+	models "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/artist/models"
+	interfaces "github.com/smwbalfe/playlist-archive/backend/pkg/client/interface"
 )
 
 const (

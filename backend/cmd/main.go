@@ -1,20 +1,21 @@
 package main
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/api"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/config"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/db"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/repository"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/services"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/utils"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/workers"
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
-	"net/http"
+	"github.com/smwbalfe/playlist-archive/backend/internal/api"
+	"github.com/smwbalfe/playlist-archive/backend/internal/config"
+	"github.com/smwbalfe/playlist-archive/backend/internal/db"
+	"github.com/smwbalfe/playlist-archive/backend/internal/repository"
+	service "github.com/smwbalfe/playlist-archive/backend/internal/services"
+	"github.com/smwbalfe/playlist-archive/backend/internal/utils"
+	"github.com/smwbalfe/playlist-archive/backend/internal/workers"
+	"github.com/smwbalfe/playlist-archive/backend/pkg/client"
 )
 
 func InitializeServices(dbs *config.DatabaseConnections) (*config.AppServices, error) {
@@ -34,7 +35,7 @@ func InitializeServices(dbs *config.DatabaseConnections) (*config.AppServices, e
 }
 
 func InitializeDatabases(env *config.Environment) (*config.DatabaseConnections, error) {
-	
+
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%v:%v", env.RedisHost, env.RedisPort),
 		Password: "",

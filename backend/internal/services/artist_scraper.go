@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/utils"
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
-	sp "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
-	artModels "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/artist/models"
+	"github.com/smwbalfe/playlist-archive/backend/internal/utils"
+	sp "github.com/smwbalfe/playlist-archive/backend/pkg/client"
+	artModels "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/artist/models"
 )
 
 type ArtistScraperService struct {

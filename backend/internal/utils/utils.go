@@ -1,12 +1,9 @@
 package utils
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/domain"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/redis/go-redis/v9"
-	models "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/playlist/models"
 	"io"
 	"net/http"
 	"net/url"
@@ -14,6 +11,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/smwbalfe/playlist-archive/backend/internal/domain"
+	models "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/playlist/models"
 )
 
 func ResetRedis(rdb *redis.Client, ctx context.Context) error {

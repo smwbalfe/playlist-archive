@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/utils"
+	"github.com/smwbalfe/playlist-archive/backend/pkg/client/utils"
 )
 
 type Auth struct {

@@ -3,13 +3,14 @@ package utils
 import (
 	"compress/gzip"
 	"fmt"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/shared"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/smwbalfe/playlist-archive/backend/pkg/client/shared"
 )
 
 var Headers = map[string]string{

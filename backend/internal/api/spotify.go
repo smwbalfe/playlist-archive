@@ -1,10 +1,11 @@
 package api
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/domain"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/transport"
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/utils"
 	"net/http"
+
+	"github.com/smwbalfe/playlist-archive/backend/internal/domain"
+	"github.com/smwbalfe/playlist-archive/backend/internal/transport"
+	"github.com/smwbalfe/playlist-archive/backend/internal/utils"
 )
 
 func (a *api) PlaylistHandler(w http.ResponseWriter, r *http.Request) {

@@ -1,6 +1,6 @@
 package transport
 
-import "github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/domain"
+import "github.com/smwbalfe/playlist-archive/backend/internal/domain"
 
 type MonthlyListeners struct {
 	Min int `json:"min"`

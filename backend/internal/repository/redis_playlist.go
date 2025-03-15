@@ -1,12 +1,13 @@
 package repository
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/domain"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/redis/go-redis/v9"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/smwbalfe/playlist-archive/backend/internal/domain"
 )
 
 type RedisPlaylistRepository struct {

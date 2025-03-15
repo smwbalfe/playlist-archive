@@ -5,12 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/redis/go-redis/v9"
-	"github.com/rs/zerolog/log"
 	"scraper/internal/utils"
 	"sync"
-	sp "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client"
-	artModels "github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/endpoints/artist/models"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
+	sp "github.com/smwbalfe/playlist-archive/backend/pkg/client"
+	artModels "github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/artist/models"
 )
 
 type ArtistScraperService struct {
@@ -26,7 +27,6 @@ func NewArtistScraperService(redis *redis.Client, spClient *sp.SpotifyClient, wo
 		NumWorkers: workers,
 	}
 }
-
 
 func (s *ArtistScraperService) ParseRelated(relatedFront artModels.ArtistRelated) []artModels.Artist {
 	return relatedFront.Data.ArtistUnion.RelatedContent.RelatedArtists.Items

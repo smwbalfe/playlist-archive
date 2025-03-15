@@ -1,7 +1,7 @@
 package transport
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/internal/domain"
+	"github.com/smwbalfe/playlist-archive/backend/internal/domain"
 )
 
 type PlaylistResponse struct {
@@ -15,7 +15,6 @@ type CreatePlaylistRequest struct {
 type CreatePlaylistResponse struct {
 	Link string `json:"link"`
 }
-
 
 type PlaylistMetaResponse struct {
 	Name string `json:"playlist_name"`

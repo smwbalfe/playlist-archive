@@ -1,8 +1,9 @@
 package interfaces
 
 import (
-	"github.com/smwbalfe/shrillecho-playlist-archive/backend/pkg/client/shared"
 	"net/http"
+
+	"github.com/smwbalfe/playlist-archive/backend/pkg/client/shared"
 )
 
 type APIClient interface {
