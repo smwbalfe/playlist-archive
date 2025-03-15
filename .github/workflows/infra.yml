@@ -1,0 +1,168 @@
+name: 'Infra Pipeline'
+on:
+  push:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/infra.yml'
+  pull_request:
+  workflow_dispatch:
+
+env:
+  TF_WORKING_DIR: './infra/terraform'
+  BUCKET_NAME: shrillecho-tf-state
+
+jobs:
+  create_state_bucket:
+    runs-on: ubuntu-latest
+    environment: shrillecho
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}/bucket
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Check if bucket exists
+      id: check_bucket
+      run: bash ../../../scripts/ci/check_s3_exists.sh
+
+    - uses: hashicorp/setup-terraform@v3
+      if: steps.check_bucket.outputs.bucket_exists == 'false'
+    
+    - name: Terraform Init
+      if: steps.check_bucket.outputs.bucket_exists == 'false'
+      run: terraform init
+    
+    - name: Create State Bucket
+      if: steps.check_bucket.outputs.bucket_exists == 'false'
+      run: terraform apply -auto-approve
+
+  terraform:
+    needs: create_state_bucket
+    runs-on: ubuntu-latest
+    environment: shrillecho
+    outputs:
+      droplet_ip: ${{ steps.droplet_ip.outputs.droplet_ip }} 
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+    
+    - uses: hashicorp/setup-terraform@v3
+    
+    - name: Terraform Init
+      run: terraform init
+    
+    - name: Terraform Plan
+      run: terraform plan
+      env:
+        TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
+    
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
+      env:
+        TF_VAR_do_token: ${{ secrets.DO_TOKEN }}
+
+    - name: Store Droplet IP
+      id: droplet_ip
+      run: bash ../../scripts/ci/read_droplet_ip.sh
+
+  configure_vps:
+    needs: terraform
+    environment: shrillecho
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infra
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Docker and Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ needs.terraform.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            curl -fsSL https://get.docker.com | sh
+            curl -SL "https://github.com/docker/compose/releases/download/v2.24.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+
+      - name: Copy Deployment Files
+        uses: burnett01/rsync-deployments@6.0.0
+        with:
+          switches: -avzr --delete
+          path: infra
+          remote_path: /root/deployment
+          remote_host: ${{ needs.terraform.outputs.droplet_ip }}
+          remote_user: root
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Setup SSL Certificates
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ needs.terraform.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/deployment/infra
+            mkdir -p ./nginx/letsencrypt/live/shrillecho.app
+            cat << 'EOF' > ./nginx/letsencrypt/live/shrillecho.app/privkey1.pem
+            ${{secrets.PRIVKEY_PEM}}
+            EOF
+            cat << 'EOF' > ./nginx/letsencrypt/live/shrillecho.app/fullchain1.pem
+            ${{secrets.FULLCHAIN_PEM}}
+            EOF
+            chmod 600 ./nginx/letsencrypt/live/shrillecho.app/privkey1.pem
+            chmod 600 ./nginx/letsencrypt/live/shrillecho.app/fullchain1.pem
+
+      - name: Setup Environment Variables
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ needs.terraform.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/deployment/infra
+            cat > .env.prod << EOF
+            GO_PORT=${{vars.GO_PORT}}
+            GO_HOST=${{vars.GO_HOST}}
+            REDIS_HOST=${{vars.REDIS_HOST}}
+            REDIS_PORT=${{vars.REDIS_PORT}}
+            ALLOWED_ORIGINS=${{vars.ALLOWED_ORIGINS}}
+            POSTGRES_PASSWORD=${{secrets.POSTGRES_PASSWORD}}
+            POSTGRES_HOST=${{vars.POSTGRES_HOST}}
+            POSTGRES_PORT=${{vars.POSTGRES_PORT}}
+            POSTGRES_DB=${{vars.POSTGRES_DB}}
+            POSTGRES_USER=${{vars.POSTGRES_USER}}
+            SUPABASE_JWT_SECRET=${{secrets.SUPABASE_JWT_SECRET}}
+            EOF
+
+      - name: Deploy Application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ needs.terraform.outputs.droplet_ip }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/deployment/infra
+            sudo systemctl docker start
+            echo "$GITHUB_TOKEN" | docker login ghcr.io -u smwbalfe --password-stdin
+            docker-compose -f docker-compose.yml down
+            docker-compose -f docker-compose.yml up -d
