@@ -11,7 +11,7 @@ import (
 
 const (
 	ApiURL                = "https://api.spotify.com/v1"
-	ExtensionsGetPlaylist = `{"persistedQuery":{"version":1,"sha256Hash":"19ff1327c29e99c208c86d7a9d8f1929cfdf3d3202a0ff4253c821f1901aa94d"}}`
+	ExtensionsGetPlaylist = `{"persistedQuery":{"version":1,"sha256Hash":"a5f3cc790d0a61f860c3c04ba1090cb2bd4cb38ae8bec44bc063124e796bf256"}}`
 )
 
 type PlaylistService struct {
@@ -34,16 +34,40 @@ func (s *PlaylistService) Get(playlistId string) (string, error) {
 }
 
 func (s *PlaylistService) GetFront(playlistId string) (models.PlaylistTracks, error) {
-	variables := fmt.Sprintf(`{"uri":"spotify:playlist:%s", "offset":%v, "limit":%v}`,
+	variables := fmt.Sprintf(`{"uri":"spotify:playlist:%s", "offset":%v, "limit":%v, "enableWatchFeedEntrypoint":true}`,
 		playlistId, 0, 4999)
-	reqURL := s.client.BuildQueryURL("fetchPlaylistWithGatedEntityRelations", variables, ExtensionsGetPlaylist)
+
+	reqURL := s.client.BuildQueryURL("fetchPlaylist", variables, ExtensionsGetPlaylist)
+
 	resp, err := s.client.Get(reqURL, nil)
 	if resp.StatusCode != 200 {
-		return models.PlaylistTracks{}, errors.New("response code != 200")
+		return models.PlaylistTracks{}, errors.New(fmt.Sprintf("response code != 200: %v", err.Error()))
 	}
 	if err != nil {
 		return models.PlaylistTracks{}, fmt.Errorf("failed to get playlist data for %v: %v", playlistId, err)
 	}
+
+	var plTracks models.PlaylistTracks
+	if err := json.Unmarshal(resp.Data, &plTracks); err != nil {
+		return models.PlaylistTracks{}, fmt.Errorf("failed to unmarshal playlist data: %v", err)
+	}
+	return plTracks, nil
+}
+
+func (s *PlaylistService) GetPlaylistMeta(playlistId string) (models.PlaylistTracks, error) {
+	variables := fmt.Sprintf(`{"uri":"spotify:playlist:%s", "offset":%v, "limit":%v, "enableWatchFeedEntrypoint": true}`,
+		playlistId, 0, 4999)
+
+	reqURL := s.client.BuildQueryURL("fetchPlaylist", variables, ExtensionsGetPlaylist)
+
+	resp, err := s.client.Get(reqURL, nil)
+	if resp.StatusCode != 200 {
+		return models.PlaylistTracks{}, fmt.Errorf("response code != 200 %v", err.Error())
+	}
+	if err != nil {
+		return models.PlaylistTracks{}, fmt.Errorf("failed to get playlist data for %v: %v", playlistId, err)
+	}
+
 	var plTracks models.PlaylistTracks
 	if err := json.Unmarshal(resp.Data, &plTracks); err != nil {
 		return models.PlaylistTracks{}, fmt.Errorf("failed to unmarshal playlist data: %v", err)
@@ -61,17 +85,30 @@ func (s *PlaylistService) Create(trackURIs []string, user string, playlistName s
 	if err != nil {
 		return "", err
 	}
+
 	var playlist models.Playlist
 	if err := json.Unmarshal(createResp.Data, &playlist); err != nil {
 		return "", err
 	}
+
+	batchSize := 100
 	addURL := fmt.Sprintf("%s/playlists/%s/tracks", ApiURL, playlist.ID)
-	addData := map[string]interface{}{
-		"uris": trackURIs,
-	}
-	_, err = s.client.Post(addURL, addData, nil)
-	if err != nil {
-		return "", err
+
+	for i := 0; i < len(trackURIs); i += batchSize {
+		end := i + batchSize
+		if end > len(trackURIs) {
+			end = len(trackURIs)
+		}
+
+		batch := trackURIs[i:end]
+		addData := map[string]interface{}{
+			"uris": batch,
+		}
+
+		_, err = s.client.Post(addURL, addData, nil)
+		if err != nil {
+			return "", err
+		}
 	}
 	return fmt.Sprintf("https://open.spotify.com/playlist/%s", playlist.ID), nil
 }

@@ -57,6 +57,7 @@ func (srv *SpotifyService) GetArtistName(artist string) (string, error) {
 func (s *SpotifyService) GetTracksExpanded(playlistId string) ([]plModels.Track, error) {
 	plTracks, err := s.spotify.Playlists.GetFront(playlistId)
 	if err != nil {
+		fmt.Println(err.Error())
 		return []plModels.Track{}, err
 	}
 	var tracks []plModels.Track
@@ -67,19 +68,19 @@ func (s *SpotifyService) GetTracksExpanded(playlistId string) ([]plModels.Track,
 }
 
 func (s *SpotifyService) GetPlaylistMeta(playlistId string) (string, error) {
-	fmt.Printf("test : %v", playlistId)
-	plTracks, err := s.spotify.Playlists.GetFront(playlistId)
+	plTracks, err := s.spotify.Playlists.GetPlaylistMeta(playlistId)
 	if err != nil {
 		return "", err
 	}
+	fmt.Println(plTracks.Data.PlaylistV2.Name)
 	return plTracks.Data.PlaylistV2.Name, nil
 }
 
-func (s *SpotifyService) BatchGetArtists(artistIDs []string) (*artModels.ArtistResponse, error) {
+func (s *SpotifyService) BatchGetArtists(artistIDs []string) (artModels.ArtistResponse, error) {
 	if len(artistIDs) == 0 {
-		return &artModels.ArtistResponse{Artists: []artModels.ArtistData{}}, nil
+		return artModels.ArtistResponse{}, nil
 	}
-	combined := &artModels.ArtistResponse{
+	combined := artModels.ArtistResponse{
 		Artists: make([]artModels.ArtistData, 0, len(artistIDs)),
 	}
 
@@ -91,7 +92,7 @@ func (s *SpotifyService) BatchGetArtists(artistIDs []string) (*artModels.ArtistR
 		}
 		batchResponse, err := s.spotify.Artists.Many(artistIDs, offset, limit)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get artists batch at offset %d: %v", offset, err)
+			return artModels.ArtistResponse{}, fmt.Errorf("failed to get artists batch at offset %d: %v", offset, err)
 		}
 		combined.Artists = append(combined.Artists, batchResponse.Artists...)
 	}
@@ -102,6 +103,7 @@ func (s *SpotifyService) BatchGetArtists(artistIDs []string) (*artModels.ArtistR
 func (srv *SpotifyService) GetPlaylistGenres(ctx context.Context, playlistID string) ([]string, error) {
 	tracks, err := srv.GetTracksExpanded(playlistID)
 	if err != nil {
+		fmt.Println(err.Error())
 		return []string{}, err
 	}
 	var artists []string
@@ -256,13 +258,25 @@ func (srv *SpotifyService) GetArtistDiscoveredOn(artists []string, semaphore cha
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	var totalPlaylists []domain.PlaylistArchiveItem
+
+	errorCount := 0
 	errCh := make(chan error, len(artists))
+
 	for _, artist := range artists {
 		wg.Add(1)
 		go func(artist string) {
 			defer wg.Done()
+			fmt.Println("waiting on semaphore")
 			semaphore <- struct{}{}
+			defer func() {
+				<-semaphore
+				fmt.Println("semaphore released")
+			}()
+
+			fmt.Println("getting discovered on")
 			discoveredOn, err := srv.spotify.Artists.GetDiscoveredOn(artist)
+			fmt.Println("discovered on got")
+
 			if err != nil {
 				errCh <- fmt.Errorf("failed to get discovered on for %s: %v", artist, err)
 				log.Printf("Failed to process artist %s: %v", artist, err)
@@ -275,16 +289,21 @@ func (srv *SpotifyService) GetArtistDiscoveredOn(artists []string, semaphore cha
 			mu.Unlock()
 		}(artist)
 	}
+
 	wg.Wait()
 	close(errCh)
 	for err := range errCh {
-		fmt.Println("going over errors")
+		fmt.Println("processing error")
 		if err != nil {
 			log.Printf("Error occurred: %v", err)
+			errorCount++
 		}
 	}
+
+	fmt.Println("removing duplicates")
 	result := utils.RemoveDuplicates(totalPlaylists)
-	log.Printf("Completed collection. Total playlists before dedup: %d, after dedup: %d", len(totalPlaylists), len(result))
+	log.Printf("Completed collection. Total playlists before dedup: %d, after dedup: %d, errors: %d",
+		len(totalPlaylists), len(result), errorCount)
 	return result
 }
 

@@ -100,6 +100,9 @@ func (a *api) Routes() *chi.Mux {
 			r.Get("/playlists/genres", a.ReadPlaylistGenres)
 			r.Post("/playlist/filter", a.FilterPlaylists)
 			r.Post("/playlist/create", a.AddToPlaylist)
+			r.Get("/artist/random", a.GetRandomArtist)
+			r.Get("/artist/genres", a.GetArtistGenres)
+			r.Post("/debug", a.Debug)
 		})
 	})
 
@@ -109,6 +112,7 @@ func (a *api) Routes() *chi.Mux {
 			r.Post("/artists", a.ArtistScrape)
 			r.Get("/playlists", a.CollectPlaylists)
 			r.Get("/playlists_seed", a.PlaylistSeededScrape)
+			r.Get("/artist/pool", a.GetArtistPool)
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/", a.RegisterUser)

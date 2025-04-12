@@ -75,6 +75,35 @@ func collectUniqueArtists(tracks []models.Track, limit int) []string {
 	return uniqueArtists
 }
 
+func (a *api) GetArtistPool(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("user").(uuid.UUID)
+	if !ok {
+		http.Error(w, "no uuid provided, have you registered...", http.StatusInternalServerError)
+		return
+	}
+	pool, err := utils.ParseQueryInt(r.URL.Query().Get("pool"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	artists, err := a.userRepo.GetUserArtistsByUserAndScrapeID(r.Context(), userID, int64(pool))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(artists) == 0 {
+		http.Error(w, "no artists found for this user and pool", http.StatusNotFound)
+		return
+	}
+	artistExpanded, err := a.spotifyService.BatchGetArtists(artists)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	utils.Json(w, r, artistExpanded)
+}
+
 func (a *api) PlaylistSeededScrape(w http.ResponseWriter, r *http.Request) {
 	playlistID := r.URL.Query()["id"]
 

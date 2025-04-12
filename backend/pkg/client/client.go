@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/artist"
 	"github.com/smwbalfe/playlist-archive/backend/pkg/client/endpoints/playlist"
@@ -76,10 +77,9 @@ func (c *SpotifyClient) Request(method string, url string, body []byte, headers 
 	if err != nil {
 		return shared.RequestResponse{}, fmt.Errorf("fail to create request: %v", err)
 	}
-	accessToken, clientToken := c.Auth.GetTokens()
 
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-	req.Header.Add("Client-Token", clientToken)
+	req.Header.Add("authorization", fmt.Sprintf("Bearer %s", os.Getenv("ACCESS_TOKEN")))
+
 	if method == "POST" && body != nil {
 		req.Header.Add("Content-Type", "application/json")
 	}
@@ -98,7 +98,7 @@ func (c *SpotifyClient) Request(method string, url string, body []byte, headers 
 			return shared.RequestResponse{}, fmt.Errorf("failed to refresh authorization: %v", err)
 		}
 		return c.Request(method, url, body, headers)
-	} else if resp.StatusCode != 200 {
+	} else if resp.StatusCode >= 300 {
 		return shared.RequestResponse{}, fmt.Errorf("failed request error: %v", resp.StatusCode)
 	}
 	return resp, nil
@@ -107,7 +107,7 @@ func (c *SpotifyClient) Request(method string, url string, body []byte, headers 
 func (c *SpotifyClient) BuildQueryURL(operationName string, variables string, extensions string) string {
 	return fmt.Sprintf("%s?operationName=%s&variables=%s&extensions=%s",
 		ApiPartnerURL,
-		operationName,
+		url.QueryEscape(operationName),
 		url.QueryEscape(variables),
 		url.QueryEscape(extensions))
 }

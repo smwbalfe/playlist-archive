@@ -26,12 +26,6 @@ func NewAuth(httpClient *http.Client) *Auth {
 }
 
 func (a *Auth) Initialize() error {
-
-	// clientID := os.Getenv("CLIENT_ID")
-	// if err := a.SetClientToken(clientID); err != nil {
-	// 	return fmt.Errorf("failed to set client token: %v", err)
-	// }
-
 	a.AccessToken = os.Getenv("ACCESS_TOKEN")
 	return nil
 }

@@ -33,10 +33,11 @@ func (s *ArtistService) GetRelated(artistID string) (models.ArtistRelated, error
 	reqURL := s.client.BuildQueryURL("queryArtistRelated", variables, ExtensionsRelated)
 	fmt.Println(reqURL)
 	resp, err := s.client.Get(reqURL, nil)
+	fmt.Printf("response: %v", string(resp.Data))
 	if err != nil {
 		return models.ArtistRelated{}, fmt.Errorf("failed to get related artists for %v: %v", artistID, err)
 	}
-	fmt.Println(string(resp.Data))
+
 	var response models.ArtistRelated
 	if err = json.Unmarshal(resp.Data, &response); err != nil {
 		return models.ArtistRelated{}, fmt.Errorf("failed to unmarshal response: %v", err)
@@ -48,9 +49,7 @@ func (s *ArtistService) GetRelated(artistID string) (models.ArtistRelated, error
 func (s *ArtistService) GetDiscoveredOn(artistID string) (models.DiscoveredResponse, error) {
 	variables := fmt.Sprintf(`{"uri":"spotify:artist:%s"}`, artistID)
 	reqURL := s.client.BuildQueryURL("queryArtistDiscoveredOn", variables, ExtensionsDiscovered)
-	fmt.Println("DEBUG GETTING DISCOVERED ON")
 	resp, err := s.client.Get(reqURL, nil)
-	fmt.Println("DEBUG GETTING DISCOVERED ON HAS BEEN GOT")
 	if err != nil {
 		return models.DiscoveredResponse{}, fmt.Errorf("failed to get discovered on for %v: %v", artistID, err)
 	}

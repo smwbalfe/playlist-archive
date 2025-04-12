@@ -28,3 +28,19 @@ export interface AppContextType {
 export interface AppProviderProps {
   children: ReactNode;
 }
+
+export interface ArtistPool {
+  artists: ArtistPoolItem[];
+}
+
+export interface Image {
+  url: string;
+  height: number;
+  width: number;
+}
+
+export interface ArtistPoolItem {
+  name: string;
+  id: string;
+  images: Image[];
+}

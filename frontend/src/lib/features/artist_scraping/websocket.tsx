@@ -5,39 +5,55 @@ import { Checkbox } from "@/src/lib/components/ui/checkbox";
 import { Music } from "lucide-react";
 import env from "@/src/lib/config/env";
 
-export const WebSocketListener = () => {
-  const [status, setStatus] = useState("Disconnected");
+// Define types for our component
+interface Scrape {
+  id: string;
+  seed_artist: string;
+  total_artists: number;
+  depth: number;
+}
+
+interface AppState {
+  scrapes: Scrape[];
+  activeScrapes: string[];
+}
+
+interface AppContext {
+  app: AppState;
+  setApp: React.Dispatch<React.SetStateAction<AppState>>;
+}
+
+export const WebSocketListener: React.FC = () => {
+  const [status, setStatus] = useState<string>("Disconnected");
+  const [expandedIds, setExpandedIds] = useState<string[]>([]);
   const { app, setApp } = useApp();
 
   useEffect(() => {
     if (!app.activeScrapes) setApp((prev) => ({ ...prev, activeScrapes: [] }));
-
     const socket = new WebSocket(env.NEXT_PUBLIC_WEBSOCKET_API);
 
     socket.addEventListener("open", () => setStatus("Connected"));
     socket.addEventListener("close", () => setStatus("Disconnected"));
     socket.addEventListener("error", () => setStatus("Error"));
-
-    socket.addEventListener("message", (event) => {
+    socket.addEventListener("message", (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data) as Scrape;
         if (data.id) {
-          setApp((prev) => {
+          setApp((prev: any) => {
             const exists = prev.scrapes.some(
-              (response) => response.id === data.id,
+              (response: any) => response.id === data.id
             );
             return exists
               ? prev
               : { ...prev, scrapes: [...prev.scrapes, data] };
           });
         }
-      } catch (e) {}
+      } catch (e) { }
     });
-
     return () => socket.close();
-  }, [setApp]);
+  }, [setApp, app.activeScrapes]);
 
-  const toggleScrape = (id: any, checked: any) => {
+  const toggleScrape = (id: string, checked: boolean): void => {
     setApp((prev) => ({
       ...prev,
       activeScrapes: checked
@@ -46,43 +62,65 @@ export const WebSocketListener = () => {
     }));
   };
 
+  const toggleExpand = (id: string): void => {
+    setExpandedIds(prev =>
+      prev.includes(id)
+        ? prev.filter(itemId => itemId !== id)
+        : [...prev, id]
+    );
+  };
+
   return (
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">Artist Pools</h2>
-        <div className="flex items-center gap-2 bg-white rounded-full px-3 py-1">
+    <div className="p-6 bg-gray-50">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-gray-800">Artist Pools</h2>
+        <div className="flex items-center gap-2 bg-white rounded-full px-4 py-1.5 shadow-sm">
           <div
-            className={`h-2 w-2 rounded-full ${status === "Connected" ? "bg-green-500" : "bg-red-500"}`}
+            className={`h-3 w-3 rounded-full ${status === "Connected" ? "bg-green-500" : "bg-red-600"
+              }`}
           />
-          <span className="text-xs text-gray-500">{status}</span>
+          <span className="text-sm font-medium text-gray-600">{status}</span>
         </div>
       </div>
-
       {app.scrapes?.length ? (
-        <div className="grid grid-cols-3 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div>
           {app.scrapes.map(({ id, seed_artist, total_artists, depth }) => (
-            <Card key={id} className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-medium truncate">{seed_artist}</span>
-                <Checkbox
-                  checked={app.activeScrapes?.includes(id)}
-                  onCheckedChange={(checked) => toggleScrape(id, checked)}
-                />
+            <div key={id} className="border mb-2 p-2 rounded bg-white">
+              <div
+                className="flex items-center cursor-pointer"
+                onClick={() => toggleExpand(id)}
+              >
+                <span className="mr-2 font-bold">{seed_artist}</span>
+                <span className="ml-auto text-gray-500">
+                  {expandedIds.includes(id) ? '▼' : '►'}
+                </span>
               </div>
-              <div className="text-xs text-gray-500 space-y-1">
-                <div>ID: {id}</div>
-                <div className="flex justify-between">
-                  <span>{total_artists} Artists</span>
-                  <span>Depth {depth}</span>
+
+              {expandedIds.includes(id) && (
+                <div className="mt-2 pl-2 pt-2 border-t border-gray-100">
+                  <div className="flex items-center">
+                    <span className="text-sm text-gray-600">Select:</span>
+                    <Checkbox
+                      checked={app.activeScrapes?.includes(id)}
+                      onCheckedChange={(checked) => toggleScrape(id, checked as boolean)}
+                      className="ml-2"
+                    />
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600 space-y-1">
+                    <p>pool_id: {id}</p>
+                    <p>{total_artists} Artists</p>
+                    <p>{depth} layers deep</p>
+                  </div>
                 </div>
-              </div>
-            </Card>
+              )}
+            </div>
           ))}
         </div>
       ) : (
-        <Card className="p-6 text-center">
-          <Music className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">No responses yet</p>
+        <Card className="p-8 text-center bg-gray-100 border border-gray-200">
+          <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600 font-medium">No artist pools available yet</p>
+          <p className="text-sm text-gray-500 mt-2">Pools will appear here once connected</p>
         </Card>
       )}
     </div>

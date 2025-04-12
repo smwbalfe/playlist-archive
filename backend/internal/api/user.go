@@ -16,7 +16,6 @@ func (a *api) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user, err := a.userRepo.CreateUser(r.Context(), userID)
-	fmt.Println(err)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

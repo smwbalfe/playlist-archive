@@ -17,7 +17,6 @@ export const usePlaylistGrid = () => {
   const [limit, setLimit] = useState(5);
   const [filterError, setFilterError] = useState<string>("");
   const [activeView, setActiveView] = useState<ViewState>("playlists");
-  // New state for popup management
   const [activeTrackPopup, setActiveTrackPopup] = useState<string | null>(null);
 
   const { app } = useApp();
@@ -44,8 +43,6 @@ export const usePlaylistGrid = () => {
     }
   };
 
- 
-
   const fetchTracks = async () => {
     try {
       setIsLoadingTracks(true);
@@ -61,40 +58,42 @@ export const usePlaylistGrid = () => {
           max: 10000,
         },
       });
-      console.log("setting tracks", data.tracks);
-      setTracks(data.tracks);
+      setTracks(data.tracks || []);
       setActiveView("tracks");
     } catch (error: any) {
       console.error("Error fetching tracks:", error);
       setFilterError(error.message || "Failed to fetch tracks");
+      setTracks([]);
     } finally {
       setIsLoadingTracks(false);
     }
   };
 
   const createPlaylist = async () => {
-    const shortTracks = tracks.slice(0, 99);
-    const data = await api.post("/spotify/playlist/create", {
-      tracks: shortTracks.map((track) => track.id),
-    });
-    const spotifyAppUri = data.link
-      .replace("https://open.spotify.com/", "spotify:")
-      .replace(/\//g, ":");
-    toast("Playlist created", {
-      description: "Your new playlist is ready",
-      action: {
-        label: "View on Spotify",
-        onClick: () => window.open(spotifyAppUri, "_self"),
-      },
-    });
+    try {
+      const data = await api.post("/spotify/playlist/create", {
+        tracks: tracks.map((track) => track.id),
+      });
+      const spotifyAppUri = data.link
+        .replace("https://open.spotify.com/", "spotify:")
+        .replace(/\//g, ":");
+      toast("Playlist created", {
+        description: "Your new playlist is ready",
+        action: {
+          label: "View on Spotify",
+          onClick: () => window.open(spotifyAppUri, "_self"),
+        },
+      });
+    } catch (error) {
+      console.error("Error creating playlist:", error);
+      toast.error("Failed to create playlist");
+    }
   };
 
-  // Updated to handle both popup and Spotify navigation
   const openSpotify = (trackId: string) => {
     window.location.href = `spotify:track:${trackId}`;
   };
 
-  // New functions for popup management
   const toggleTrackPopup = (trackId: string) => {
     setActiveTrackPopup((current) => (current === trackId ? null : trackId));
   };
@@ -115,14 +114,14 @@ export const usePlaylistGrid = () => {
     limit,
     filterError,
     activeView,
-    activeTrackPopup, // Added state
+    activeTrackPopup,
     handleLimitChange,
     scrapePlaylists,
     fetchTracks,
     createPlaylist,
     openSpotify,
-    toggleTrackPopup, // Added function
-    closeAllPopups, // Added function
+    toggleTrackPopup,
+    closeAllPopups,
     setActiveView,
   };
 };

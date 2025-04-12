@@ -147,7 +147,7 @@ func RemoveArtists(allSimpleTracks []domain.SimpleTrack, excludedArtists []strin
 		excluded := false
 		for _, artist := range track.Artists {
 			if _, exists := excludedMap[artist.Name]; exists {
-				fmt.Printf("removing: %v", artist.Name)
+				fmt.Printf("removing: %v\n", artist.Name)
 				excluded = true
 				break
 			}
