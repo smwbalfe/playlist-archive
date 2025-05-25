@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 )
@@ -47,8 +48,13 @@ func LoadEnv() Environment {
 	supabaseJwtSecret := os.Getenv("SUPABASE_JWT_SECRET")
 	allowedOrigins := os.Getenv("ALLOWED_ORIGINS")
 
-	if postgresHost == "" || postgresPassword == "" || postgresDb == "" || postgresUser == "" {
+	fmt.Printf("Postgres Config:\nHost: %s\nDB: %s\nUser: %s\nPort: %s\n", postgresHost, postgresDb, postgresUser, postgresPort)
+	fmt.Printf("Redis Config:\nHost: %s\nPort: %s\n", redisHost, redisPort)
+	fmt.Printf("Server Config:\nHost: %s\nPort: %s\n", serverHost, serverPort)
+	fmt.Printf("Supabase JWT Secret: %s\n", supabaseJwtSecret)
+	fmt.Printf("Allowed Origins: %s\n", allowedOrigins)
 
+	if postgresHost == "" || postgresPassword == "" || postgresDb == "" || postgresUser == "" {
 		panic("Missing required PostgreSQL environment variables")
 	}
 	if redisHost == "" || redisPort == "" {
